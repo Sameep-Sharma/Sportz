@@ -2,7 +2,7 @@ CREATE TYPE "public"."match_status" AS ENUM('scheduled', 'live', 'finished');-->
 CREATE TABLE "commentary" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"match_id" integer NOT NULL,
-	"minutes" integer NOT NULL,
+	"minute" integer NOT NULL,
 	"sequence" integer NOT NULL,
 	"period" text NOT NULL,
 	"event_type" text NOT NULL,

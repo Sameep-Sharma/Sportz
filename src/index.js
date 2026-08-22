@@ -24,13 +24,17 @@ app.use(securityMiddleware());
 app.use("/matches", matchRouter);
 app.use("/matches/:id/commentary", commentaryRouter);
 
-const { broadcastMatchCreated, broadcastCommentary } = attachWebSocketServer(server);
+const { broadcastMatchCreated, broadcastCommentary } =
+  attachWebSocketServer(server);
 app.locals.broadcastMatchCreated = broadcastMatchCreated;
 app.locals.broadcastCommentary = broadcastCommentary;
 
-server.listen(PORT,HOST, () => {
-  const baseUrl = HOST === '0.0.0.0' ? `http://localhost:${PORT}` : `http://${HOST}:${PORT}`;
+server.listen(PORT, HOST, () => {
+  const baseUrl =
+    HOST === "0.0.0.0" ? `http://localhost:${PORT}` : `http://${HOST}:${PORT}`;
 
   console.log(`Server is running on ${baseUrl}`);
-  console.log(`Web Socket Server is running on ${baseUrl.replace('http','ws')}/ws`);
+  console.log(
+    `Web Socket Server is running on ${baseUrl.replace("http", "ws")}/ws`,
+  );
 });

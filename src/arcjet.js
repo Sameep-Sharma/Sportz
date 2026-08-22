@@ -37,7 +37,12 @@ export function securityMiddleware() {
             const decision = await httpArcjet.protect(req);
 
             if(decision.isDenied()) {
-                console.log(`Arcjet HTTP Denied [${req.method} ${req.originalUrl || req.url}] - Reason:`, decision.reason);
+                const reasonCode = decision.reason.isRateLimit()
+                    ? 'rate_limit'
+                    : decision.reason.isBot()
+                        ? 'bot'
+                        : 'denied';
+                console.log(`Arcjet HTTP Denied [${req.method} ${req.path}] - Reason: ${reasonCode}`);
 
                 if(decision.reason.isRateLimit()) {
                     return res.status(429).json({ error: 'Too many requests.' });
