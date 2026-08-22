@@ -2,7 +2,8 @@ import "dotenv/config";
 import arcjet, {detectBot, shield, slidingWindow} from "@arcjet/node";
 
 const arcjetKey = process.env.ARCJET_KEY;
-const arcjetMode = process.env.ARCJET_MODE === 'DRY_RUN' ? 'DRY_RUN' : 'LIVE';
+const isDev = process.env.NODE_ENV !== "production" || process.env.ARCJET_MODE === "DRY_RUN";
+export const arcjetMode = isDev ? "DRY_RUN" : (process.env.ARCJET_MODE || "LIVE");
 
 
 if(!arcjetKey) throw new Error('ARCJET_KEY environment variable is missing.');
@@ -14,7 +15,7 @@ export const httpArcjet = arcjetKey ?
             shield({ mode: arcjetMode }),
             detectBot({ mode: arcjetMode, allow: ['CATEGORY:SEARCH_ENGINE', "CATEGORY:PREVIEW","CATEGORY:TOOL",
             "CURL",
-            "POSTMAN", 'CURL']}),
+            "POSTMAN"]}),
             slidingWindow({ mode: arcjetMode, interval: '10s', max: 50 })
         ],
     }) : null;
@@ -24,8 +25,8 @@ export const wsArcjet = arcjetKey ?
         key: arcjetKey,
         rules: [
             shield({ mode: arcjetMode }),
-            detectBot({ mode: arcjetMode, allow: ['CATEGORY:SEARCH_ENGINE', "CATEGORY:PREVIEW", 'CURL']}),
-            slidingWindow({ mode: arcjetMode, interval: '2s', max: 5 })
+            detectBot({ mode: arcjetMode, allow: ['CATEGORY:SEARCH_ENGINE', "CATEGORY:PREVIEW", "CATEGORY:TOOL", 'CURL', 'POSTMAN']}),
+            slidingWindow({ mode: arcjetMode, interval: '2s', max: 20 })
         ],
     }) : null;
 

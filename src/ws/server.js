@@ -1,5 +1,5 @@
 import WebSocket, { WebSocketServer } from "ws";
-import { wsArcjet } from "../arcjet.js";
+import { wsArcjet, arcjetMode } from "../arcjet.js";
 
 const matchSubscribers = new Map(); //which sockets are subscribed to which matchId
 
@@ -62,19 +62,36 @@ function handleMessage(socket, data) {
     message = JSON.parse(data.toString());
   } catch {
     sendJson(socket, { type: "error", message: "Invalid JSON" });
-  }
-
-  if (message?.type === "subscribe" && Number.isInteger(message.matchId)) {
-    subscribeToMatch(socket, message.matchId);
-    socket.subscriptions.add(message.matchId);
-    sendJson(socket, { type: "subscribed", matchId: message.matchId });
     return;
   }
 
-  if (message?.type === "unsubscribe" && Number.isInteger(message.matchId)) {
-    unsubscribeFromMatch(socket, message.matchId);
-    socket.subscriptions.delete(message.matchId);
-    sendJson(socket, { type: "unsubscribed", matchId: message.matchId });
+  if (!message || typeof message !== "object") return;
+
+  const matchId = Number.parseInt(message.matchId, 10);
+
+  if (message.type === "subscribe" && Number.isInteger(matchId)) {
+    subscribeToMatch(socket, matchId);
+    socket.subscriptions.add(matchId);
+    sendJson(socket, { type: "subscribed", matchId });
+    return;
+  }
+
+  if (message.type === "unsubscribe" && Number.isInteger(matchId)) {
+    unsubscribeFromMatch(socket, matchId);
+    socket.subscriptions.delete(matchId);
+    sendJson(socket, { type: "unsubscribed", matchId });
+    return;
+  }
+
+  if (message.type === "setSubscriptions" && Array.isArray(message.matchIds)) {
+    for (const rawId of message.matchIds) {
+      const id = Number.parseInt(rawId, 10);
+      if (Number.isInteger(id)) {
+        subscribeToMatch(socket, id);
+        socket.subscriptions.add(id);
+      }
+    }
+    sendJson(socket, { type: "subscriptions", matchIds: Array.from(socket.subscriptions) });
   }
 }
 
@@ -92,7 +109,7 @@ export function attachWebSocketServer(server) {
       return;
     }
 
-    if (wsArcjet) {
+    if (wsArcjet && arcjetMode === "LIVE") {
       try {
         const decision = await wsArcjet.protect(req);
 
@@ -162,5 +179,10 @@ export function attachWebSocketServer(server) {
     broadcastToMatch(matchId, { type: "commentary", data: comment });
   }
 
-  return { broadcastMatchCreated, broadcastCommentary };
+  function broadcastScoreUpdate(matchId, score) {
+    broadcastToAll(wss, { type: "score_update", matchId, data: score });
+    broadcastToMatch(matchId, { type: "score_update", matchId, data: score });
+  }
+
+  return { broadcastMatchCreated, broadcastCommentary, broadcastScoreUpdate };
 }

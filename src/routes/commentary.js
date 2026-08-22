@@ -36,7 +36,12 @@ commentaryRouter.get("/", async (req, res) => {
       .orderBy(desc(commentary.createdAt))
       .limit(limit);
 
-    return res.json({ data });
+    const formattedData = data.map((item) => ({
+      ...item,
+      minute: item.minutes,
+    }));
+
+    return res.json({ data: formattedData });
   } catch (error) {
     console.error(error);
 
@@ -60,7 +65,7 @@ commentaryRouter.post("/", async (req, res) => {
     });
   }
 
-  const { minutes, ...commentaryData } = parsedBody.data;
+  const { minutes, minute, ...commentaryData } = parsedBody.data;
 
   try {
     const [result] = await db
@@ -72,12 +77,17 @@ commentaryRouter.post("/", async (req, res) => {
       })
       .returning();
 
+    const formattedResult = {
+      ...result,
+      minute: result.minutes,
+    };
+
     if (res.app.locals.broadcastCommentary) {
-      res.app.locals.broadcastCommentary(result.matchId, result);
+      res.app.locals.broadcastCommentary(formattedResult.matchId, formattedResult);
     }
 
     return res.status(201).json({
-      data: result,
+      data: formattedResult,
     });
   } catch (error) {
     console.error(error);
