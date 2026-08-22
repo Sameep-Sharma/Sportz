@@ -10,6 +10,7 @@ import { db } from "../db/db.js";
 import { getMatchStatus } from "../utils/match-status.js";
 import { desc } from "drizzle-orm";
 
+
 export const matchRouter = Router();
 
 const MAX_LIMIT = 100;
@@ -20,7 +21,7 @@ matchRouter.get("/", async (req, res) => {
   if (!parsed.success) {
     return res.status(400).json({
       error: "Invalid Query",
-      details: JSON.stringify(parsed.error),
+      details: parsed.error.issues,
     });
   }
 
@@ -49,16 +50,16 @@ matchRouter.post("/", async (req, res) => {
   if (!parsed.success) {
     return res.status(400).json({
       error: "Invalid Payload",
-      details: JSON.stringify(parsed.error),
+      details: parsed.error.issues,
     });
   }
 
-  const {
+  const { data:{
     startTime,
     endTime,
     homeScore,
     awayScore,
-  } = parsed.data;
+  }} = parsed;
 
   try {
     const [event] = await db
