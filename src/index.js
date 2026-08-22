@@ -36,6 +36,8 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use(securityMiddleware());
+
 app.get("/", (req, res) => {
   res.send("Sportz Real-Time Sports Server is running.");
 });
