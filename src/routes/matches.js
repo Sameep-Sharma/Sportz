@@ -10,7 +10,6 @@ import { db } from "../db/db.js";
 import { getMatchStatus } from "../utils/match-status.js";
 import { desc } from "drizzle-orm";
 
-
 export const matchRouter = Router();
 
 const MAX_LIMIT = 100;
@@ -54,12 +53,9 @@ matchRouter.post("/", async (req, res) => {
     });
   }
 
-  const { data:{
-    startTime,
-    endTime,
-    homeScore,
-    awayScore,
-  }} = parsed;
+  const {
+    data: { startTime, endTime, homeScore, awayScore },
+  } = parsed;
 
   try {
     const [event] = await db
@@ -74,9 +70,9 @@ matchRouter.post("/", async (req, res) => {
       })
       .returning();
 
-      if(res.app.locals.broadCastMatchCreated){
-        res.app.locals.broadCastMatchCreated(event);
-      }
+    if (res.app.locals.broadcastMatchCreated) {
+      res.app.locals.broadcastMatchCreated(event);
+    }
 
     return res.status(201).json({
       data: event,

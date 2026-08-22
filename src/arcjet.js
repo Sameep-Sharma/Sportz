@@ -12,7 +12,9 @@ export const httpArcjet = arcjetKey ?
         key: arcjetKey,
         rules: [
             shield({ mode: arcjetMode }),
-            detectBot({ mode: arcjetMode, allow: ['CATEGORY:SEARCH_ENGINE', "CATEGORY:PREVIEW", 'CURL']}),
+            detectBot({ mode: arcjetMode, allow: ['CATEGORY:SEARCH_ENGINE', "CATEGORY:PREVIEW","CATEGORY:TOOL",
+            "CURL",
+            "POSTMAN", 'CURL']}),
             slidingWindow({ mode: arcjetMode, interval: '10s', max: 50 })
         ],
     }) : null;
@@ -35,8 +37,19 @@ export function securityMiddleware() {
             const decision = await httpArcjet.protect(req);
 
             if(decision.isDenied()) {
+                const reasonCode = decision.reason.isRateLimit()
+                    ? 'rate_limit'
+                    : decision.reason.isBot()
+                        ? 'bot'
+                        : 'denied';
+                console.log(`Arcjet HTTP Denied [${req.method} ${req.path}] - Reason: ${reasonCode}`);
+
                 if(decision.reason.isRateLimit()) {
                     return res.status(429).json({ error: 'Too many requests.' });
+                }
+
+                if(decision.reason.isBot()) {
+                    return res.status(403).json({ error: 'Forbidden: Bot detected', botType: decision.reason.botType || decision.reason });
                 }
 
                 return res.status(403).json({ error: 'Forbidden.' });
