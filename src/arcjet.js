@@ -6,7 +6,9 @@ const isDev = process.env.NODE_ENV !== "production" || process.env.ARCJET_MODE =
 export const arcjetMode = isDev ? "DRY_RUN" : (process.env.ARCJET_MODE || "LIVE");
 
 
-if(!arcjetKey) throw new Error('ARCJET_KEY environment variable is missing.');
+if (!arcjetKey) {
+  console.warn("⚠️ ARCJET_KEY environment variable is not set. Rate limiting and security middleware will be bypassed.");
+}
 
 export const httpArcjet = arcjetKey ?
     arcjet({

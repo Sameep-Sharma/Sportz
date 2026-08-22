@@ -55,11 +55,11 @@ Only run `npm run db:generate` after changing `src/db/schema.js`.
 In a second terminal:
 
 ```bash
-cd frontend/sportz-frontend
+cd frontend
 npm ci
 ```
 
-Create `frontend/sportz-frontend/.env`:
+Create `frontend/.env`:
 
 ```env
 VITE_API_BASE_URL="http://localhost:8000"
@@ -88,7 +88,7 @@ The seed script loads `src/data/data.json` and inserts sample matches and commen
 
 ### 6. Start the frontend
 
-From `frontend/sportz-frontend`:
+From `frontend`:
 
 ```bash
 npm run dev
@@ -139,7 +139,7 @@ Arcjet                 →  Rate limiting & security (HTTP + WebSocket)
 │   │   └── seed.js              # Seeds DB via REST API
 │   └── data/
 │       └── data.json            # Sample match & commentary data
-├── frontend/sportz-frontend/
+├── frontend/
 │   ├── App.tsx                  # Main application component
 │   ├── components/
 │   │   ├── MatchCard.tsx        # Match display card
