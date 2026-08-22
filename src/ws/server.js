@@ -19,40 +19,64 @@ function broadCast(wss, payload) {
 
 export function attachWebSocketServer(server) {
   const wss = new WebSocketServer({
-    server,
+    noServer: true,
     path: "/ws",
     maxPayload: 1024 * 1024,
   });
 
-  wss.on("connection", async (socket,req) => {
+  server.on("upgrade", async (req, socket, head) => {
+    const requestUrl = new URL(req.url, `http://${req.headers.host}`);
+    if (requestUrl.pathname !== "/ws") {
+      socket.destroy();
+      return;
+    }
 
     if (wsArcjet) {
       try {
         const decision = await wsArcjet.protect(req);
-        console.log(`Arcjet conclusion: ${decision.conclusion}, isDenied: ${decision.isDenied()}`);
+        console.log(
+          `Arcjet conclusion: ${decision.conclusion}, isDenied: ${decision.isDenied()}`,
+        );
         for (const res of decision.results) {
           console.log(` - Rule [${res.reason?.type}]: ${res.conclusion}`);
         }
 
         if (decision.isDenied()) {
-          const code = decision.reason.isRateLimit() ? 1013 : 1008;
+          const statusCode = decision.reason.isRateLimit() ? 429 : 403;
           const reason = decision.reason.isRateLimit()
-            ? "Rate limit exceeded"
+            ? "Too Many Requests"
             : "Forbidden";
 
-          console.log(`Closing socket: ${code} ${reason}`);
-          socket.close(code, reason);
+          socket.write(
+            `HTTP/1.1 ${statusCode} ${reason}\r\n` +
+              "Connection: close\r\n" +
+              "Content-Length: 0\r\n" +
+              "\r\n",
+          );
+          socket.destroy();
           return;
         }
       } catch (err) {
         console.error("Arcjet WebSocket security check failed:", err);
-        socket.close(1011, "Internal Server Error");
+        socket.write(
+          "HTTP/1.1 503 Service Unavailable\r\n" +
+            "Connection: close\r\n" +
+            "Content-Length: 0\r\n" +
+            "\r\n",
+        );
+        socket.destroy();
         return;
       }
     } else {
       console.log("wsArcjet is not defined or null");
     }
 
+    wss.handleUpgrade(req, socket, head, (client) => {
+      wss.emit("connection", client, req);
+    });
+  });
+
+  wss.on("connection", (socket, req) => {
     socket.isAlive = true;
     socket.on("pong", () => {
       socket.isAlive = true;
@@ -63,11 +87,11 @@ export function attachWebSocketServer(server) {
   });
 
   const interval = setInterval(() => {
-    (wss.clients.forEach((ws) => {
-        if (ws.isAlive === false) return ws.terminate();
-        ws.isAlive = false;
-        ws.ping();
-      }));
+    wss.clients.forEach((ws) => {
+      if (ws.isAlive === false) return ws.terminate();
+      ws.isAlive = false;
+      ws.ping();
+    });
   }, 3000);
 
   wss.on("close", () => clearInterval(interval));
